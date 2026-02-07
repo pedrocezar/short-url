@@ -8,7 +8,7 @@ public class ShortUrlService
 {
     private readonly ConcurrentDictionary<string, string> _store = new();
     private readonly ConcurrentDictionary<string, string> _reverse = new();
-    private static readonly char[] Alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".ToCharArray();
+    private static readonly char[] _alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".ToCharArray();
     private readonly RandomNumberGenerator _rng = RandomNumberGenerator.Create();
 
     public string Shorten(string url)
@@ -25,7 +25,7 @@ public class ShortUrlService
             }
         }
 
-        throw new Exception("Failed to generate unique key for URL");
+        throw new InvalidOperationException("Failed to generate unique key for URL");
     }
 
     public string? Resolve(string key)
@@ -38,7 +38,7 @@ public class ShortUrlService
         var bytes = new byte[length];
         _rng.GetBytes(bytes);
         var sb = new StringBuilder(length);
-        for (int i = 0; i < length; i++) sb.Append(Alphabet[bytes[i] % Alphabet.Length]);
+        for (int i = 0; i < length; i++) sb.Append(_alphabet[bytes[i] % _alphabet.Length]);
         return sb.ToString();
     }
 }

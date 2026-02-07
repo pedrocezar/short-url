@@ -1,8 +1,11 @@
+using FluentValidation;
 using ShortUrl.Models;
 using ShortUrl.Services;
+using ShortUrl.Validators;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<ShortUrlService>();
+builder.Services.AddValidatorsFromAssemblyContaining<ShortenRequestValidator>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -11,11 +14,8 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 
-app.MapPost("/shorten", (ShortenRequest req, ShortUrlService svc, HttpRequest http) =>
+app.MapPost("/shorten", async (ShortenRequest req, ShortUrlService svc, IValidator<ShortenRequest> validator, HttpRequest http) =>
 {
-    if (req is null || string.IsNullOrWhiteSpace(req.Url))
-        return Results.BadRequest(new { error = "Url is required" });
-
     var key = svc.Shorten(req.Url);
     var baseUrl = $"{http.Scheme}://{http.Host}";
     var shortUrl = $"{baseUrl}/{key}";
@@ -24,9 +24,13 @@ app.MapPost("/shorten", (ShortenRequest req, ShortUrlService svc, HttpRequest ht
 
 app.MapGet("/{key}", (string key, ShortUrlService svc) =>
 {
-    if (string.IsNullOrWhiteSpace(key))
-        return Results.BadRequest(new { error = "Key is required" });
+    var url = svc.Resolve(key);
+    if (url is null) return Results.NotFound();
+    return Results.Redirect(url);
+});
 
+app.MapGet("/url/{key}", (string key, ShortUrlService svc) =>
+{
     var url = svc.Resolve(key);
     if (url is null) return Results.NotFound();
     return Results.Ok(new { url });

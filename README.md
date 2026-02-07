@@ -1,110 +1,104 @@
-# Short URL Web API (minimal)
+# Short URL Web API
 
-Minimal .NET API to shorten URLs with in-memory storage.
+Minimal .NET API to shorten URLs with in-memory storage. Built with .NET 10 minimal APIs, FluentValidation, and OpenAPI/Scalar documentation.
 
-**Prerequisites**
-- .NET 10 SDK (see `TargetFramework` in `ShortUrl.Api.csproj`).
+## Table of contents
 
-**Run**
+- [Prerequisites](#prerequisites)
+- [Getting started](#getting-started)
+- [API endpoints](#api-endpoints)
+- [Examples](#examples)
+- [API documentation](#api-documentation)
+- [Project structure](#project-structure)
+- [Limitations & recommendations](#limitations--recommendations)
 
-Windows / PowerShell:
+## Prerequisites
+
+- [.NET 10 SDK](https://dotnet.microsoft.com/download) (see `TargetFramework` in `ShortUrl.Api.csproj`).
+
+## Getting started
+
+**Restore and run** (Windows / PowerShell):
 
 ```powershell
 dotnet restore
 dotnet run --project .
 ```
 
-The application will start and show the listening addresses (for example `http://localhost:5000`).
+The app will start and display the listening addresses (e.g. `http://localhost:5000`).
 
-**Endpoints**
-- `POST /shorten` — create a short link. Accepts JSON with the `url` property.
-  - Example request:
+**Root path:** `GET /` redirects to the API documentation at `/scalar`.
+
+## API endpoints
+
+| Method | Path        | Description |
+|--------|-------------|-------------|
+| `GET`  | `/`         | Redirects to `/scalar` (API docs). |
+| `POST` | `/shorten`  | Creates a short link. Body: `{ "url": "https://..." }`. |
+| `GET`  | `/{key}`    | Redirects (302) to the original URL, or 404 if not found. |
+| `GET`  | `/url/{key}`| Returns the original URL as JSON: `{ "url": "..." }`, or 404. |
+
+- **Validation:** `POST /shorten` accepts only valid HTTP/HTTPS URLs. Invalid input returns `400` with validation errors (FluentValidation).
+
+## Examples
+
+**Create a short URL:**
 
 ```bash
 curl -X POST http://localhost:5000/shorten \
   -H "Content-Type: application/json" \
-  -d '{"url":"https://example.com/very/long/path"}'
+  -d "{\"url\":\"https://example.com/very/long/path\"}"
 ```
 
-  - Example response (200):
+**Response (200):**
 
 ```json
 { "key": "abc123", "shortUrl": "http://localhost:5000/abc123" }
 ```
 
-- `GET /{key}` — redirects to the original URL (302 if found, 404 if not).
-- `GET /url/{key}` — returns the original URL as JSON (200 `{ "url": "..." }` or 404).
-
-**Swagger / OpenAPI**
-- Swagger UI is available at `/swagger` while the app is running.
-
-**Limitations & recommendations**
-- Storage is in-memory — restarting the app will lose all mappings.
-- For production: use a persistent store (database or Redis), add authentication, rate limiting and monitoring.
-
-**Technical notes**
-- Input validation uses `FluentValidation` (see `Validators/ShortenRequestValidator.cs`).
-- Target framework: `net10.0` (see `ShortUrl.Api.csproj`).
-
-Contributions and improvements are welcome — please open an issue or pull request.
-# Short URL Web API (minimal)
-
-Minimal .NET API project to shorten URLs (in-memory).
-
-Requirements
-- .NET 10 SDK
-
-Run
-
-Windows / PowerShell:
-
-```powershell
-dotnet restore
-dotnet run --project .
-```
-
-Examples
-
-1) Create a short URL (POST JSON):
+**Redirect to original URL:**  
+Open `http://localhost:5000/{key}` in a browser, or:
 
 ```bash
-curl -X POST http://localhost:5000/shorten -H "Content-Type: application/json" -d '{"url":"https://example.com/very/long/path"}'
+curl -L http://localhost:5000/abc123
 ```
 
-Expected response:
-
-```json
-{ "key": "abc123", "shortUrl": "http://localhost:5000/abc123" }
-```
-
-2) Access short URL (GET):
-
-Open `http://localhost:5000/{key}` in your browser — the API will redirect to the original URL.
-
-Notes
-- Storage is in-memory; restarting the application will lose mappings.
-- For production, replace with a persistent store (DB, Redis, etc.) and add rate-limiting/validation.
-
-Bitly Integration
-- To use Bitly instead of the local in-memory shortener, set the environment variable `BITLY_TOKEN` with your Bitly Generic Access Token.
-
-Example (PowerShell):
-
-```powershell
-$env:BITLY_TOKEN = "YOUR_BITLY_TOKEN"
-dotnet run --project .
-```
-
-Shorten via Bitly (POST):
+**Get original URL as JSON:**
 
 ```bash
-curl -X POST http://localhost:5000/shorten/bitly -H "Content-Type: application/json" -d '{"url":"https://example.com/very/long/path"}'
+curl http://localhost:5000/url/abc123
 ```
 
-Response example:
+**Response (200):**
 
 ```json
-{ "link": "https://bit.ly/xyz123" }
+{ "url": "https://example.com/very/long/path" }
 ```
 
-If `BITLY_TOKEN` is not set, the `/shorten/bitly` endpoint will return a 400 with an explanatory message.
+## API documentation
+
+- **Scalar:** `http://localhost:5000/scalar` — interactive API reference while the app is running.
+- OpenAPI spec is exposed for tooling (e.g. `MapOpenApi()`).
+
+## Project structure
+
+```
+ShortUrl/
+├── Program.cs                 # Minimal API setup, endpoints, Scalar
+├── ShortUrl.Api.csproj        # .NET 10, FluentValidation, Scalar, OpenAPI
+├── Models/
+│   └── ShortenRequest.cs      # Request model for POST /shorten
+├── Services/
+│   └── ShortUrlService.cs     # In-memory shorten/resolve (ConcurrentDictionary)
+└── Validators/
+    └── ShortenRequestValidator.cs  # URL validation (required, valid HTTP/HTTPS)
+```
+
+## Limitations & recommendations
+
+- **Storage:** In-memory only. Restarting the application clears all short URLs.
+- **Production:** Use a persistent store (database or Redis), add authentication, rate limiting, and monitoring.
+
+---
+
+Contributions and improvements are welcome — open an issue or pull request.

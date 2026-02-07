@@ -3,18 +3,21 @@ using FluentValidation.AspNetCore;
 using ShortUrl.Models;
 using ShortUrl.Services;
 using ShortUrl.Validators;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddOpenApi();
 builder.Services.AddSingleton<ShortUrlService>();
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<ShortenRequestValidator>();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-app.UseSwagger();
-app.UseSwaggerUI();
+app.MapGet("/", () =>
+{
+    return Results.Redirect("/scalar");
+});
 
 app.MapPost("/shorten", async (ShortenRequest req, ShortUrlService svc, IValidator<ShortenRequest> validator, HttpRequest http) =>
 {
@@ -37,6 +40,12 @@ app.MapGet("/url/{key}", (string key, ShortUrlService svc) =>
     var url = svc.Resolve(key);
     if (url is null) return Results.NotFound();
     return Results.Ok(new { url });
+});
+
+app.MapOpenApi();
+app.MapScalarApiReference(options =>
+{
+    options.OpenApiRoutePattern = "/openapi/{documentName}.json";
 });
 
 await app.RunAsync();

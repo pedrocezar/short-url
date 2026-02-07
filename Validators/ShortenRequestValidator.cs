@@ -8,6 +8,7 @@ public class ShortenRequestValidator : AbstractValidator<ShortenRequest>
     public ShortenRequestValidator()
     {
         RuleFor(x => x.Url)
+            .NotNull()
             .NotEmpty()
             .WithMessage("Url é obrigatória")
             .Must(IsValidUrl)

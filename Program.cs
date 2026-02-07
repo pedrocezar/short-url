@@ -1,10 +1,12 @@
 using FluentValidation;
+using FluentValidation.AspNetCore;
 using ShortUrl.Models;
 using ShortUrl.Services;
 using ShortUrl.Validators;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<ShortUrlService>();
+builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<ShortenRequestValidator>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -16,9 +18,10 @@ app.UseSwaggerUI();
 
 app.MapPost("/shorten", async (ShortenRequest req, ShortUrlService svc, IValidator<ShortenRequest> validator, HttpRequest http) =>
 {
+    var validationResult = await validator.ValidateAsync(req);
+    if (!validationResult.IsValid) return Results.BadRequest(new { validationResult.Errors });
     var key = svc.Shorten(req.Url);
-    var baseUrl = $"{http.Scheme}://{http.Host}";
-    var shortUrl = $"{baseUrl}/{key}";
+    var shortUrl = $"{http.Scheme}://{http.Host}/{key}";
     return Results.Ok(new { key, shortUrl });
 });
 

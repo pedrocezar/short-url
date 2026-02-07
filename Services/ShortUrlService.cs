@@ -1,29 +1,19 @@
 using System.Collections.Concurrent;
 using System.Security.Cryptography;
-using System.Text;
+using Microsoft.AspNetCore.WebUtilities;
 
 namespace ShortUrl.Services;
 
 public class ShortUrlService
 {
     private readonly ConcurrentDictionary<string, string> _store = new();
-    private readonly ConcurrentDictionary<string, string> _reverse = new();
-    private static readonly char[] _alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".ToCharArray();
-    private readonly RandomNumberGenerator _rng = RandomNumberGenerator.Create();
 
     public string Shorten(string url)
     {
-        if (_reverse.TryGetValue(url, out var existing)) return existing;
+        if (_store.TryGetValue(url, out var existing)) return existing;
 
-        for (int i = 0; i < 10; i++)
-        {
-            var key = GenerateKey(6);
-            if (_store.TryAdd(key, url))
-            {
-                _reverse.TryAdd(url, key);
-                return key;
-            }
-        }
+        var key = GenerateKey(6);
+        if (_store.TryAdd(key, url)) return key;
 
         throw new InvalidOperationException("Failed to generate unique key for URL");
     }
@@ -33,12 +23,9 @@ public class ShortUrlService
         return _store.TryGetValue(key, out var url) ? url : null;
     }
 
-    private string GenerateKey(int length)
+    public static string GenerateKey(int size)
     {
-        var bytes = new byte[length];
-        _rng.GetBytes(bytes);
-        var sb = new StringBuilder(length);
-        for (int i = 0; i < length; i++) sb.Append(_alphabet[bytes[i] % _alphabet.Length]);
-        return sb.ToString();
+        var bytes = RandomNumberGenerator.GetBytes(size);
+        return WebEncoders.Base64UrlEncode(bytes);
     }
 }

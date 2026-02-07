@@ -2,7 +2,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "short-url", "short-url.csproj", "{54E66889-296F-EB5E-23EE-7ECE9C8FB388}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShortUrl.Api", "ShortUrl.Api.csproj", "{54E66889-296F-EB5E-23EE-7ECE9C8FB388}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

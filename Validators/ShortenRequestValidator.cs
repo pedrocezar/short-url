@@ -10,9 +10,9 @@ public class ShortenRequestValidator : AbstractValidator<ShortenRequest>
         RuleFor(x => x.Url)
             .NotNull()
             .NotEmpty()
-            .WithMessage("Url é obrigatória")
+            .WithMessage("URL is required")
             .Must(IsValidUrl)
-            .WithMessage("Url deve ser uma URL válida");
+            .WithMessage("URL must be a valid URL");
     }
 
     private static bool IsValidUrl(string? url)

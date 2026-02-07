@@ -17,7 +17,7 @@ var app = builder.Build();
 app.MapGet("/", () =>
 {
     return Results.Redirect("/scalar");
-});
+}).ExcludeFromDescription();
 
 app.MapPost("/shorten", async (ShortenRequest req, ShortUrlService svc, IValidator<ShortenRequest> validator, HttpRequest http) =>
 {
@@ -33,7 +33,7 @@ app.MapGet("/{key}", (string key, ShortUrlService svc) =>
     var url = svc.Resolve(key);
     if (url is null) return Results.NotFound();
     return Results.Redirect(url);
-});
+}).ExcludeFromDescription();
 
 app.MapGet("/url/{key}", (string key, ShortUrlService svc) =>
 {

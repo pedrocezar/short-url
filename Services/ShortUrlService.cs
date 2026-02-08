@@ -1,29 +1,26 @@
-using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace ShortUrl.Services;
 
-public class ShortUrlService
+public class ShortUrlService(IDistributedCache _cache)
 {
-    private readonly ConcurrentDictionary<string, string> _store = new();
+    private static readonly string _keyPrefix = "key:url:";
 
-    public string Shorten(string url)
+    public async Task<string> ShortenAsync(string url, CancellationToken ct = default)
     {
-        if (_store.TryGetValue(url, out var existing)) return existing;
-
         var key = GenerateKey(6);
-        if (_store.TryAdd(key, url)) return key;
-
-        throw new InvalidOperationException("Failed to generate unique key for URL");
+        await _cache.SetStringAsync($"{_keyPrefix}{key}", url, new DistributedCacheEntryOptions { AbsoluteExpiration = DateTime.UtcNow.AddDays(1) }, ct);
+        return key;
     }
 
-    public string? Resolve(string key)
+    public async Task<string?> ResolveAsync(string key, CancellationToken ct = default)
     {
-        return _store.TryGetValue(key, out var url) ? url : null;
+        return await _cache.GetStringAsync($"{_keyPrefix}{key}", ct);
     }
 
-    public static string GenerateKey(int size)
+    private static string GenerateKey(int size)
     {
         var bytes = RandomNumberGenerator.GetBytes(size);
         return WebEncoders.Base64UrlEncode(bytes);
